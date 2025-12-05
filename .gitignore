@@ -1,0 +1,49 @@
+# Ignore data directory
+/data/
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Python caches and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+.env
+
+# Jupyter
+.ipynb_checkpoints
+
+# IDEs and editors
+.vscode/
+.idea/
+
+# Distribution / build
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+eggs/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
