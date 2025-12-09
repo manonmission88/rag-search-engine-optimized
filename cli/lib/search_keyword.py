@@ -49,31 +49,35 @@ class InvertedIndex:
             pickle.dump(self.index, f)
         with open(self.docmap_path, "wb") as f:
             pickle.dump(self.docmap, f)
-        
-        
+    
+    def load(self):
+        """load data from the disk"""
+        with open(self.index_path,"rb") as f:
+            self.index = pickle.load(f)
+        with open(self.docmap_path,"rb") as f:
+            self.docmap = pickle.load(f)
+                    
 def build_command():
     idx = InvertedIndex()
     idx.build()
     idx.save()
-    docs = idx.get_documents("merida")
-    if docs:
-        print(f"First document for token 'merida' = {docs[0]}")
-    else:
-        # Helpful debug output when seed term is absent.
-        print("No documents found for token 'merida'")
-    
     
 def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
-    movies = load_movies()
-    results = []
+    idx = InvertedIndex()
+    movies = idx.load()
+    seen , results = set(),[]
     query_tokens = tokenize(query)
-    for movie in movies:
-        movie_tokens = tokenize(movie["title"])
-        if tokenization_compare(query_tokens, movie_tokens):
-            results.append(movie)
+    for query in query_tokens:
+        get_docs = idx.get_documents(query)
+        for doc_id in get_docs:
+            if doc_id in seen:
+                continue 
+            seen.add(doc_id)
+            text = idx.docmap[doc_id]
             if len(results) >= limit:
-                break
-    return results
+                break 
+            results.append(text)
+    return results         
 
 def preprocess_text(text: str) -> str:
     text = text.lower().translate(str.maketrans("", "", string.punctuation))
