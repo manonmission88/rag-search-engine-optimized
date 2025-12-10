@@ -1,7 +1,7 @@
 from .search_utils import DEFAULT_SEARCH_LIMIT, load_movies, load_stop_words, CACHE_DIR
 import string
 from nltk.stem import PorterStemmer
-from collections import defaultdict
+from collections import defaultdict, Counter
 import os
 import pickle
 
@@ -24,15 +24,32 @@ class InvertedIndex:
         self.docmap: dict[int, dict] = {}
         self.index_path = os.path.join(CACHE_DIR, "index.pkl")
         self.docmap_path = os.path.join(CACHE_DIR, "docmap.pkl")
+        self.term_frequencies_path = os.path.join(CACHE_DIR, "term_frequencies.pkl")
+        self.term_frequencies = defaultdict(Counter)
         
     def __add_document(self, doc_id, text):
         tokens = tokenize(text)
         for word in set(tokens):
             self.index[word].add(doc_id)
+        self.term_frequencies[doc_id].update(tokens)
         
     def get_documents(self, term):
         doc_ids = self.index.get(term.lower(), set())
         return sorted(list(doc_ids))
+    
+    def get_tf(self, doc_id, term):
+        # Convert doc_id to int if it's a string
+        doc_id = int(doc_id)
+        
+        tokens = tokenize(term)
+        if len(tokens) != 1:
+            raise Exception("Cannot be more than one")
+        token = tokens[0]
+        
+        # Return 0 if doc doesn't exist or term not found
+        if doc_id not in self.term_frequencies:
+            return 0
+        return self.term_frequencies[doc_id].get(token, 0)
     
     def build(self):
         movies = load_movies()
@@ -49,6 +66,8 @@ class InvertedIndex:
             pickle.dump(self.index, f)
         with open(self.docmap_path, "wb") as f:
             pickle.dump(self.docmap, f)
+        with open(self.term_frequencies_path, "wb") as f:
+            pickle.dump(self.term_frequencies, f)
     
     def load(self):
         """load data from the disk"""
@@ -56,6 +75,9 @@ class InvertedIndex:
             self.index = pickle.load(f)
         with open(self.docmap_path,"rb") as f:
             self.docmap = pickle.load(f)
+        with open(self.term_frequencies_path,"rb") as f:
+            self.term_frequencies = pickle.load(f)
+                    
                     
 def build_command():
     idx = InvertedIndex()
@@ -77,7 +99,12 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
             if len(results) >= limit:
                 break 
             results.append(text)
-    return results         
+    return results 
+
+def tf_command(doc_id,term):
+    idx = InvertedIndex()
+    idx.load()
+    return idx.get_tf(doc_id,term)       
 
 def preprocess_text(text: str) -> str:
     text = text.lower().translate(str.maketrans("", "", string.punctuation))
