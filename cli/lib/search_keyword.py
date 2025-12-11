@@ -20,6 +20,7 @@ Key Components:
 
 """
 BM25_K1 = 1.5 
+BM25_B = 0.75
 class InvertedIndex:
     """Inverted index data structure for efficient keyword-based document search.
     
@@ -35,6 +36,8 @@ class InvertedIndex:
         self.docmap_path = os.path.join(CACHE_DIR, "docmap.pkl")
         self.term_frequencies_path = os.path.join(CACHE_DIR, "term_frequencies.pkl")
         self.term_frequencies = defaultdict(Counter)
+        self.doc_lengths = defaultdict(int)
+        self.doc_lengths_path = os.path.join(CACHE_DIR, "doc_lengths.pkl")
         
     def __add_document(self, doc_id, text):
         """Add a document to the index by tokenizing and indexing its terms.
@@ -47,6 +50,7 @@ class InvertedIndex:
         for word in set(tokens):
             self.index[word].add(doc_id)
         self.term_frequencies[doc_id].update(tokens)
+        self.doc_lengths[doc_id] = len(tokens)
         
     def get_documents(self, term):
         """Retrieve all document IDs containing a given term.
@@ -107,7 +111,7 @@ class InvertedIndex:
         bm25_score = math.log((total_doc_count-total_term_count+0.5)/(total_term_count+0.5)+1)
         return bm25_score
     
-    def get_bm25_tf(self, doc_id, term, k1=BM25_K1):
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1, b=BM25_B):
         """Calculate BM25 saturation-adjusted term frequency score.
         
         Args:
@@ -118,8 +122,9 @@ class InvertedIndex:
         Returns:
             float: Saturation-adjusted TF score.
         """
+        length_norm = 1 - b + b * (self.doc_lengths[doc_id] / self.__get_avg_doc_length())
         tf_score = self.get_tf(doc_id, term)
-        return (tf_score * (k1+1)) / (tf_score + k1)
+        return (tf_score * (k1+1)) / (tf_score + k1 * length_norm)
         
     def build(self):
         """Build the inverted index from all loaded movies.
@@ -150,6 +155,8 @@ class InvertedIndex:
             pickle.dump(self.docmap, f)
         with open(self.term_frequencies_path, "wb") as f:
             pickle.dump(self.term_frequencies, f)
+        with open(self.doc_lengths_path, "wb") as f:
+            pickle.dump(self.doc_lengths, f)
     
     def load(self):
         """Load the index, document map, and term frequencies from disk.
@@ -163,6 +170,19 @@ class InvertedIndex:
             self.docmap = pickle.load(f)
         with open(self.term_frequencies_path, "rb") as f:
             self.term_frequencies = pickle.load(f)
+        with open(self.doc_lengths_path, "rb") as f:
+            self.doc_lengths = pickle.load(f)
+    
+    def __get_avg_doc_length(self) -> float:
+        """Calculate the average document length for BM25 normalization.
+        
+        Returns:
+            float: Average number of tokens across all documents.
+        """
+        if len(self.doc_lengths) == 0:
+            return 0.0
+        total_length = sum(self.doc_lengths.values())
+        return total_length / len(self.docmap)
                     
                     
 def build_command():
@@ -224,7 +244,7 @@ def idf_command_score(term):
     idx.load()
     return idx.get_bm25_idf(term)
 
-def bm25_tf_command(doc_id, term, k1=None):
+def bm25_tf_command(doc_id, term, k1=BM25_K1, b=BM25_B):
     """CLI command to get BM25 saturation-adjusted TF score.
     
     Args:
@@ -237,10 +257,7 @@ def bm25_tf_command(doc_id, term, k1=None):
     """
     idx = InvertedIndex()
     idx.load()
-    if k1 is not None:
-        saturated_tf_score = idx.get_bm25_tf(doc_id, term, k1)
-    else:
-        saturated_tf_score = idx.get_bm25_tf(doc_id, term)
+    saturated_tf_score = idx.get_bm25_tf(doc_id, term, k1, b)
     return saturated_tf_score
 
 def preprocess_text(text: str) -> str:
