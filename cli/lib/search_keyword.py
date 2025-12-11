@@ -183,8 +183,38 @@ class InvertedIndex:
             return 0.0
         total_length = sum(self.doc_lengths.values())
         return total_length / len(self.docmap)
-                    
-                    
+    
+    def bm25(self,doc_id,term) -> float:
+        bm25_tf = self.get_bm25_tf(doc_id,term,k1=BM25_K1,b=BM25_B)
+        bm25_idf = self.get_bm25_idf(term)
+        return bm25_tf * bm25_idf
+    
+    def bm25_search(self, query, limit) -> list:
+        """Search using BM25 ranking algorithm.
+        
+        Args:
+            query (str): Search query string.
+            limit (int): Maximum number of results to return.
+            
+        Returns:
+            list: Top limit documents with their BM25 scores, sorted by score descending.
+        """
+        tokens = tokenize(query)
+        score_dictionary = defaultdict(float)
+        # Calculate BM25 score for each document
+        for doc_id in self.docmap.keys():
+            for token in tokens:
+                try:
+                    bm25_score = self.bm25(doc_id, token)
+                    score_dictionary[doc_id] += bm25_score
+                except (KeyError, Exception):
+                    continue
+        sorted_results = sorted(score_dictionary.items(), key=lambda x: x[1], reverse=True)
+        results = []
+        for doc_id, score in sorted_results[:limit]:
+            results.append({"document": self.docmap[doc_id], "score": round(score,3)})
+        return results
+            
 def build_command():
     """CLI command to build and save the inverted index from movies."""
     idx = InvertedIndex()
@@ -259,6 +289,13 @@ def bm25_tf_command(doc_id, term, k1=BM25_K1, b=BM25_B):
     idx.load()
     saturated_tf_score = idx.get_bm25_tf(doc_id, term, k1, b)
     return saturated_tf_score
+
+def bm25search_command(query,limit = DEFAULT_SEARCH_LIMIT):
+    idx = InvertedIndex()
+    idx.load()
+    top_ranks_bm25_search = idx.bm25_search(query,limit)
+    for idx, value in enumerate(top_ranks_bm25_search):
+        print(f"{idx+1}. ({value["document"]["id"]}) {value["document"]["title"]} - score: {value["score"]:.2f}")
 
 def preprocess_text(text: str) -> str:
     """Preprocess text by lowercasing and removing punctuation.
