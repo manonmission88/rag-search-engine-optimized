@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-from lib.search_keyword import search_command, build_command, tf_command, idf_command_score, bm25_tf_command, BM25_K1, BM25_B, bm25search_command
+from lib.search_keyword import (search_command, 
+                                build_command, 
+                                tf_command, 
+                                idf_command_score, 
+                                bm25_tf_command, 
+                                BM25_K1, BM25_B, 
+                                bm25search_command, 
+                                idf_command)
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -12,6 +19,9 @@ def main() -> None:
     tf_parser = subparsers.add_parser("tf", help="Count the frequencies")
     tf_parser.add_argument("doc_id", type=int, help="Doc Id ")
     tf_parser.add_argument("term", type=str, help="Term for the frequency")
+    
+    idf_parser = subparsers.add_parser("idf", help="Inverse Document Frequencies")
+    idf_parser.add_argument("term", type=str, help="term for the score ")
     
     bm25_idf_parser = subparsers.add_parser(
       'bm25idf', help="Get BM25 IDF score for a given term"
@@ -53,6 +63,9 @@ def main() -> None:
             print(f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}")
         case "bm25search":
             bm25search_command(args.query)
+        case "idf":
+            idf_score = idf_command(args.term)
+            print(f"Inverse document frequency of '{args.term}': {idf_score:.2f}")
         case _:
             parser.print_help()
 

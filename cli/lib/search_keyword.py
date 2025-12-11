@@ -259,7 +259,35 @@ def tf_command(doc_id, term):
     """
     idx = InvertedIndex()
     idx.load()
-    return idx.get_tf(doc_id, term)     
+    return idx.get_tf(doc_id, term)  
+
+def idf_command(term):
+    """
+    Calculate the Inverse Document Frequency (IDF) score for a given term.
+
+    This function computes the IDF score for a single term using the formula:
+    IDF = log((total_doc_count + 1) / (term_match_doc_count + 1))
+
+    Args:
+        term (str): The term for which to calculate the IDF score.
+
+    Returns:
+        float: The IDF score for the term.
+
+    Raises:
+        Exception: If the term tokenizes to more than one token.
+    """
+    idx = InvertedIndex()
+    idx.load()
+    total_doc_count = len(idx.docmap)
+    tokens = tokenize(term)
+    if len(tokens) != 1:
+        raise Exception("Cannot be more than one")
+    token = tokens[0]
+    term_match_doc_count = len(idx.index[token])
+    idf_score = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
+    return idf_score
+       
 
 def idf_command_score(term):
     """CLI command to get BM25 IDF score for a term.
