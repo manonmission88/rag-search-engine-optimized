@@ -4,6 +4,7 @@ from nltk.stem import PorterStemmer
 from collections import defaultdict, Counter
 import os
 import pickle
+import math 
 
 """
 Inverted Index Search Engine
@@ -51,6 +52,17 @@ class InvertedIndex:
             return 0
         return self.term_frequencies[doc_id].get(token, 0)
     
+    def get_bm25_idf(self,term):
+        """ Find Better Idf Calculation """
+        tokens = tokenize(term)
+        if len(tokens) != 1:
+            raise KeyError(" Token should not be more than one")
+        total_doc_count = len(self.docmap)
+        token = tokens[0]
+        total_term_count = len(self.index[token])
+        bm25_score = math.log((total_doc_count-total_term_count+0.5)/(total_term_count+0.5)+1)
+        return bm25_score
+        
     def build(self):
         movies = load_movies()
         for movie in movies:
@@ -104,7 +116,12 @@ def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
 def tf_command(doc_id,term):
     idx = InvertedIndex()
     idx.load()
-    return idx.get_tf(doc_id,term)       
+    return idx.get_tf(doc_id,term)     
+
+def idf_command_score(term):
+    idx = InvertedIndex()
+    idx.load()
+    return idx.get_bm25_idf(term)  
 
 def preprocess_text(text: str) -> str:
     text = text.lower().translate(str.maketrans("", "", string.punctuation))
