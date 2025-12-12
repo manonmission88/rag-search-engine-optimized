@@ -14,6 +14,7 @@ __pycache__/
 *$py.class
 *.pyc
 *.pyo
+*.toml
 *.pyd
 
 # Environment files
