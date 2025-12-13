@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np 
 import os 
 
+LIMIT = 5 
 class SemanticSearch:
     def __init__(self):
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -40,6 +41,26 @@ class SemanticSearch:
             if len(self.embeddings) == len(documents):
                 return self.embeddings
         return self.build_embeddings(documents)
+    
+    def search(self,query, limit):
+        if self.embeddings is None:
+            raise ValueError("No embeddings loaded. Call `load_or_create_embeddings` first.")
+        query_embedding = self.generate_embedding(query)
+        top_results = []
+        for id,doc_embed in enumerate(self.embeddings):
+            similarity_score = cosine_similarity(query_embedding, doc_embed)
+            top_results.append((similarity_score,self.documents[id]))
+        top_results.sort(key=lambda x: x[0], reverse= True)
+        final_results = []
+        for score,doc in top_results:
+            search_result = {
+                "score": score,
+                "title": doc["title"],
+                "description": doc["description"]
+            }
+            final_results.append(search_result)
+        return final_results[:limit]
+            
         
         
 def verify_model():
@@ -60,4 +81,57 @@ def verify_embeddings():
     embeddings = ss.load_or_create_embeddings(documents)
     print(f"Number of docs:   {len(documents)}")
     print(f"Embeddings shape: {embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions")
+
+def embed_query_text(query):
+    ss = SemanticSearch()
+    embedding = ss.generate_embedding(query)
+    print(f"Query: {query}")
+    print(f"First 5 dimensions: {embedding[:5]}")
+    print(f"Shape: {embedding.shape}")
+
+def cosine_similarity(vec1, vec2):
+    """
+    Calculate the cosine similarity between two vectors.
+    
+    Cosine similarity measures the cosine of the angle between two vectors,
+    returning a value between -1 and 1, where 1 indicates identical direction,
+    0 indicates orthogonal vectors, and -1 indicates opposite direction.
+    
+    Args:
+        vec1 (array-like): First vector (1D numpy array or list).
+        vec2 (array-like): Second vector (1D numpy array or list).
+    
+    Returns:
+        float: Cosine similarity score between the two vectors.
+               Returns 0.0 if either vector has zero magnitude (norm).
+    
+    Examples:
+        >>> vec1 = np.array([1, 0, 0])
+        >>> vec2 = np.array([1, 0, 0])
+        >>> cosine_similarity(vec1, vec2)
+        1.0
+        
+        >>> vec1 = np.array([1, 0, 0])
+        >>> vec2 = np.array([0, 1, 0])
+        >>> cosine_similarity(vec1, vec2)
+        0.0
+    """
+    dot_product = np.dot(vec1,vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+    return dot_product / (norm1 * norm2)
+
+def search_command(query,limit):
+    ss = SemanticSearch()
+    documents = load_movies()
+    ss.load_or_create_embeddings(documents)
+    search_results = ss.search(query, limit)
+    for idx, search_result in enumerate(search_results):
+        print(f"{idx}. {search_result["title"]} (score: {search_result["score"]})")
+        print(f" {search_result["description"][:100]}...")
+        print()
+        idx += 1
+        
     
