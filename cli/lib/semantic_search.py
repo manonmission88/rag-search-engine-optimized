@@ -3,7 +3,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np 
 import os 
 
-LIMIT = 5 
+DEFAULT_CHUNK_SIZE = 200
 class SemanticSearch:
     def __init__(self):
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -60,9 +60,20 @@ class SemanticSearch:
             }
             final_results.append(search_result)
         return final_results[:limit]
-            
-        
-        
+    
+def chunk_text(text, chunk_size, overlap_value):
+    words = text.split()
+    chunks = []
+    n_words = len(words)
+    i = 0
+    while i < n_words:
+        chunk_words = words[i : i + chunk_size]
+        if chunks and len(chunk_words) <= overlap_value:
+            break
+        chunks.append(" ".join(chunk_words))
+        i += chunk_size - overlap_value
+    return chunks
+       
 def verify_model():
     semantic = SemanticSearch()
     print(f"Model loaded: {semantic.embedding_model}")
@@ -133,5 +144,12 @@ def search_command(query,limit):
         print(f" {search_result["description"][:100]}...")
         print()
         idx += 1
+
+def chunk_command(text,chunk_size,overlap_value):
+    chunk_texts = chunk_text(text,chunk_size, overlap_value)
+    print(f"Chunking {len(text)} characters")
+    for idx, description in enumerate(chunk_texts):
+        print(f"{idx+1}. {description}\n")
         
     
+        
