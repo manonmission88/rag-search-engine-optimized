@@ -2,6 +2,7 @@ from .search_utils import CACHE_DIR, load_movies
 from sentence_transformers import SentenceTransformer
 import numpy as np 
 import os 
+import re 
 
 DEFAULT_CHUNK_SIZE = 200
 class SemanticSearch:
@@ -150,6 +151,19 @@ def chunk_command(text,chunk_size,overlap_value):
     print(f"Chunking {len(text)} characters")
     for idx, description in enumerate(chunk_texts):
         print(f"{idx+1}. {description}\n")
-        
-    
+
+def semantic_chunk_command(text,chunk_size,overlap):
+    updated_text = re.split(r"(?<=[.!?])\s+", text, chunk_size)
+    final_chunks = []
+    n_sentences = len(updated_text)
+    i = 0
+    while i < n_sentences:
+        chunk_sentence = updated_text[i : i + chunk_size]
+        if  final_chunks and len(chunk_sentence) <= overlap:
+            break
+        final_chunks.append(" ".join(chunk_sentence))
+        i += chunk_size - overlap
+    print(f"Semantically chunking {len(text)} characters")
+    for idx,sent in enumerate(final_chunks):
+        print(f"{idx+1}. {sent}")
         
