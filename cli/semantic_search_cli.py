@@ -8,6 +8,8 @@ from lib.semantic_search import (verify_model,
                                  search_command,
                                  chunk_command,
                                  semantic_chunk_command,
+                                 embed_chunks_command,
+                                 search_chunked_command,
                                  DEFAULT_CHUNK_SIZE) 
 
 def main():
@@ -37,6 +39,12 @@ def main():
     semantic_chunk_parser.add_argument("--max-chunk-size", type=int, default= 4, help="Maximum number of results (default: 200)")
     semantic_chunk_parser.add_argument("--overlap", type=int, default=0, help="Overlap value")
     
+    subparsers.add_parser("embed_chunks", help="Embedding the Semantic Chunk the documents")
+    
+    search_chunk_parser = subparsers.add_parser("search_chunked", help="Semantic Search Chunked")
+    search_chunk_parser.add_argument("query", type=str, help="Query to search")
+    search_chunk_parser.add_argument("--limit", type=int, nargs='?', default= 5, help="Maximum number of results (default: 5)")
+    
     args = parser.parse_args()
 
     match args.command:
@@ -54,6 +62,11 @@ def main():
             chunk_command(args.text, args.chunk_size, args.overlap)
         case "semantic_chunk":
             semantic_chunk_command(args.text, args.max_chunk_size, args.overlap)
+        case "embed_chunks":
+            embeddings = embed_chunks_command()
+            print(f"Generated {len(embeddings)} chunked embeddings")
+        case "search_chunked":
+            search_chunked_command(args.query, args.limit)
         case _:
             parser.print_help()
 
