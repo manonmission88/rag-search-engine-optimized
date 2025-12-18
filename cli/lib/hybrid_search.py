@@ -3,6 +3,7 @@ import os
 from .search_keyword import InvertedIndex
 from .semantic_search import ChunkedSemanticSearch
 from .search_utils import load_movies
+from .enhance_query import enhance_query
 
 class HybridSearch:
     def __init__(self, documents):
@@ -97,7 +98,7 @@ class HybridSearch:
         sorted_results = sorted(hybrid_results, key=lambda x: x["hybrid_score"], reverse=True)
         return [(r["id"], r) for r in sorted_results[:limit]]
             
-    def rrf_search(self, query, k=60, limit=10):
+    def rrf_search(self, query, k=60,limit=10):
         """
         Perform a hybrid search using Reciprocal Rank Fusion (RRF) to combine BM25 and semantic search results.
         This method combines results from both BM25 (keyword-based) and semantic (vector-based) search
@@ -188,19 +189,25 @@ def weighted_search_command(query, alpha, limit):
 def rrf_score(rank, k=60):
     return 1 / (k + rank)
 
-def rrf_search_command(query, k=60, limit=10):
-    documents = load_movies()
-    hs_ss = HybridSearch(documents)
-    results = hs_ss.rrf_search(query,k,limit)
-    final_results = []
-    for _,doc in results:
-        data = {
-            "title" : doc['title'],
-            "rrf_score": doc['rrf_score'],
-            "bm25_rank": doc['bm25_rank'],
-            "semantic_rank": doc['semantic_rank'],
-            "document": doc['document'][:100]
-            }
-        final_results.append(data)
-    return final_results
+def rrf_search_command(query,k=60, enhance=None,limit=10):
     
+    movies = load_movies()
+    searcher = HybridSearch(movies)
+
+    original_query = query
+    enhanced_query = None
+    if enhance:
+        enhanced_query = enhance_query(query, method=enhance)
+        query = enhanced_query
+
+    search_limit = limit
+    results = searcher.rrf_search(query, k, search_limit)
+
+    return {
+        "original_query": original_query,
+        "enhanced_query": enhanced_query,
+        "enhance_method": enhance,
+        "query": query,
+        "k": k,
+        "results": results,
+    }
