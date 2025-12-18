@@ -7,7 +7,7 @@ cache/
 .venv/
 env/
 venv/
-
+test_gemini.py
 # Python caches and compiled files
 __pycache__/
 *.py[cod]
