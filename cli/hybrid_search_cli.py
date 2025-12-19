@@ -38,7 +38,8 @@ def main() -> None:
                 print(f"    Description: {data['document'][:100]}...")
         case "rrf-search":
             search_results = rrf_search_command(args.query, args.k, args.enhance, args.limit)
-            print(f"Enhanced query ({search_results["enhance_method"]}): '{search_results["original_query"]}' -> '{search_results["query"]}'\n")
+            if search_results["enhance_method"]:
+                print(f"Enhanced query ({search_results['enhance_method']}): '{search_results['original_query']}' -> '{search_results['query']}'\n")
             for idx, (doc_id, data) in enumerate(search_results["results"], 1):
                 bm25_rank = data['bm25_rank'] if data['bm25_rank'] is not None else '-'
                 semantic_rank = data['semantic_rank'] if data['semantic_rank'] is not None else '-'
