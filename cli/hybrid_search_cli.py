@@ -18,9 +18,10 @@ def main() -> None:
     rrf_search_parser = subparser.add_parser("rrf-search", help="RRF search with ranking")
     rrf_search_parser.add_argument("query", type=str, help="Search Query")
     rrf_search_parser.add_argument("-k", type=int, default=60, help="RRF constant (default: 60)")
-    rrf_search_parser.add_argument("--enhance", type=str, choices=["spell"], help="Fix the typos")
+    rrf_search_parser.add_argument("--enhance", type=str, choices=["spell","rewrite", "expand"], help="Fix the typos")
+    rrf_search_parser.add_argument("--rerank-method", type = str, choices = ["individual"], help = "Re Ranking using LLM" )
     rrf_search_parser.add_argument("--limit", type=int, default=10, help="Number of results (default: 10)")
-
+    
     
     
     args = parser.parse_args()

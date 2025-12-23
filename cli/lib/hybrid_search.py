@@ -3,7 +3,8 @@ import os
 from .search_keyword import InvertedIndex
 from .semantic_search import ChunkedSemanticSearch
 from .search_utils import load_movies
-from .enhance_query import enhance_query
+from .enhance_query import (enhance_query,
+                            reranking_method)
 
 class HybridSearch:
     def __init__(self, documents):
@@ -189,7 +190,7 @@ def weighted_search_command(query, alpha, limit):
 def rrf_score(rank, k=60):
     return 1 / (k + rank)
 
-def rrf_search_command(query,k=60, enhance=None,limit=10):
+def rrf_search_command(query,k=60, enhance=None, rerank_method=None, limit=10):
     
     movies = load_movies()
     searcher = HybridSearch(movies)
@@ -199,7 +200,13 @@ def rrf_search_command(query,k=60, enhance=None,limit=10):
     if enhance:
         enhanced_query = enhance_query(query, method=enhance)
         query = enhanced_query
-
+    
+    search_limit = limit * 5 if rerank_method else limit 
+    results = searcher.rrf_search(query, k, search_limit)
+    rr = False 
+    if rerank_method:
+        reranked_results = reranking_method(query, results, method=rerank_method, limit=limit)
+        rr = True 
     search_limit = limit
     results = searcher.rrf_search(query, k, search_limit)
 
@@ -209,5 +216,7 @@ def rrf_search_command(query,k=60, enhance=None,limit=10):
         "enhance_method": enhance,
         "query": query,
         "k": k,
+        "rerank_method": rerank_method,
+        "reranked": rr,
         "results": results,
     }
