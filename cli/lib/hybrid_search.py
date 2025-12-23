@@ -205,11 +205,8 @@ def rrf_search_command(query,k=60, enhance=None, rerank_method=None, limit=10):
     results = searcher.rrf_search(query, k, search_limit)
     rr = False 
     if rerank_method:
-        reranked_results = reranking_method(query, results, method=rerank_method, limit=limit)
+        results = reranking_method(query, results, method=rerank_method, limit=limit)
         rr = True 
-    search_limit = limit
-    results = searcher.rrf_search(query, k, search_limit)
-
     return {
         "original_query": original_query,
         "enhanced_query": enhanced_query,
