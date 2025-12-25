@@ -2,6 +2,7 @@ import argparse
 from lib.hybrid_search import (normalize_command,
                                weighted_search_command,
                                rrf_search_command)
+from lib.evaluation import llm_evaluate_results
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Hybrid Search CLI")
@@ -21,6 +22,7 @@ def main() -> None:
     rrf_search_parser.add_argument("--enhance", type=str, choices=["spell","rewrite", "expand"], help="Fix the typos")
     rrf_search_parser.add_argument("--rerank-method", type = str, choices = ["individual", "batch", "cross_encoder"], help = "Re Ranking using LLM" )
     rrf_search_parser.add_argument("--limit", type=int, default=10, help="Number of results (default: 10)")
+    rrf_search_parser.add_argument("--evaluate", action="store_true", help="Evaluate search results using LLM (0-3 relevance scale)")
     
     
     
@@ -67,6 +69,14 @@ def main() -> None:
                 # Only show preview if no cross-encoder reranking
                 if 'cross_encoder_score' not in data:
                     print(f"   {data['document'][:100]}...")
+            
+            # LLM evaluation if requested
+            if args.evaluate:
+                print("\n--- LLM Evaluation ---")
+                scores = llm_evaluate_results(args.query, search_results["results"])
+                print("\nEvaluation Report:")
+                for idx, ((doc_id, data), score) in enumerate(zip(search_results["results"], scores), 1):
+                    print(f"{idx}. {data['title']}: {score}/3")
         case _:
             parser.print_help()
 
