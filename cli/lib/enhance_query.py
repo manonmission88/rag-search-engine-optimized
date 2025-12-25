@@ -194,8 +194,6 @@ def llm_rerank_cross_encoder(query, documents, limit):
     """
     pairs = []
     doc_list = []
-    
-    # Handle both tuple format (doc_id, doc_dict) and dict format
     for item in documents:
         if isinstance(item, tuple):
             doc_id, doc = item
