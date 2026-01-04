@@ -1,10 +1,10 @@
 # RAG Search Engine Optimized
 
-A high-performance movie search engine that combines multiple retrieval and ranking techniques to deliver accurate and relevant search results. This project implements a complete Retrieval-Augmented Generation (RAG) pipeline with advanced search capabilities including keyword search, semantic search, hybrid search, and intelligent query enhancement.
+A high-performance movie search engine that combines multiple retrieval and ranking techniques to deliver accurate and relevant search results. This project implements a complete Retrieval-Augmented Generation (RAG) pipeline with advanced search capabilities including keyword search, semantic search, hybrid search, multimodal search, and intelligent query enhancement.
 
 ## Overview
 
-This search engine provides a sophisticated approach to information retrieval by combining traditional keyword-based methods with modern neural search techniques. It demonstrates practical implementations of various search algorithms and ranking methods commonly used in production search systems.
+This search engine provides a sophisticated approach to information retrieval by combining traditional keyword-based methods with modern neural search techniques. It demonstrates practical implementations of various search algorithms and ranking methods commonly used in production search systems, including state-of-the-art multimodal search that allows users to find movies using images.
 
 ## Key Features
 
@@ -22,6 +22,9 @@ Combines BM25 and semantic search using two distinct fusion methods:
 - **Weighted Search**: Normalizes scores from both methods and combines them using a configurable alpha parameter to balance keyword and semantic relevance.
 - **Reciprocal Rank Fusion (RRF)**: A rank-based fusion technique that combines results from multiple retrieval systems without requiring score normalization. Uses the formula: RRF score = 1 / (k + rank), where k is typically set to 60.
 
+**Multimodal Search**
+Leverages vision-language models to enable image-based movie search. Upload an image (e.g., a movie poster, scene, or related image) and the system finds semantically similar movies by comparing image embeddings with text embeddings of movie titles and descriptions. Uses CLIP (Contrastive Language-Image Pre-training) models to create a shared embedding space between images and text.
+
 ### Query Enhancement
 
 **Spell Correction**
@@ -32,6 +35,9 @@ Transforms vague or colloquial queries into more specific, searchable terms. For
 
 **Query Expansion**
 Adds relevant synonyms and related terms to broaden search coverage while maintaining relevance. Helps capture documents that use different terminology.
+
+**Image Query Enhancement**
+Analyzes uploaded images along with text queries to generate enhanced search queries. Uses vision-language models to extract visual information from images and combine it with textual context to create more detailed and accurate search queries.
 
 ### Result Reranking
 
@@ -53,6 +59,9 @@ A data structure mapping terms to the documents containing them, enabling effici
 
 **Vector Store**
 Maintains dense vector representations of document chunks using sentence transformers. Enables similarity-based retrieval through cosine distance computation.
+
+**Multimodal Embedding System**
+Creates unified embeddings for both images and text using CLIP models, enabling cross-modal search where users can query with images to find relevant text-based content, or vice versa.
 
 **Hybrid Search Engine**
 Orchestrates multiple search strategies, normalizes scores across different scales, and implements fusion algorithms to combine diverse ranking signals.
@@ -193,6 +202,36 @@ Parameters:
 - `--rerank-method`: Reranking approach (`individual`, `batch`, `cross_encoder`)
 - `--limit`: Number of final results (default: 10)
 
+### Multimodal Search
+
+#### Image-Based Search
+
+Search for movies using images (posters, scenes, or related imagery):
+
+```bash
+python cli/multimodal_search_cli.py image_search data/image.png
+```
+
+This command analyzes the visual content of the image and finds movies with similar themes, characters, or visual styles by comparing the image embedding against text descriptions of movies in the database.
+
+#### Verify Image Embeddings
+
+Test that image embeddings are working correctly:
+
+```bash
+python cli/multimodal_search_cli.py verify_image_embedding data/image.png
+```
+
+### Image Query Enhancement
+
+Generate enhanced search queries by analyzing both images and text:
+
+```bash
+python cli/describe_image_cli.py --image data/image.png --query "movie about a bear"
+```
+
+The system uses vision-language models to analyze the image and combine visual information with the text query to create a more detailed and specific search query.
+
 ## How It Works
 
 ### Indexing Process
@@ -222,6 +261,9 @@ The system automatically caches embeddings to avoid recomputing expensive vector
 **Sentence Transformers**
 Open-source framework for state-of-the-art sentence, text, and image embeddings. Used for generating semantic vectors.
 
+**CLIP (Contrastive Language-Image Pre-training)**
+A neural network trained on image-text pairs that learns visual concepts from natural language supervision. Enables multimodal search by creating a shared embedding space for images and text. The model used is `clip-ViT-B-32`.
+
 **NLTK**
 Natural Language Toolkit for text processing, tokenization, and stop word filtering.
 
@@ -229,10 +271,49 @@ Natural Language Toolkit for text processing, tokenization, and stop word filter
 Transformer models that jointly encode query and document pairs for highly accurate relevance scoring. More computationally expensive but more accurate than bi-encoder approaches.
 
 **Groq API**
-Provides access to high-performance language models with extremely fast inference for query enhancement tasks.
+Provides access to high-performance language models with extremely fast inference for query enhancement tasks. Uses models like Llama for text processing and vision-language models for image analysis.
+
+**Gemini API**
+Google's multimodal AI for advanced image analysis and query generation, enabling sophisticated image-to-text query enhancement.
 
 **NumPy**
 Fundamental package for numerical computing, used for efficient vector operations and similarity calculations.
+
+**PIL (Python Imaging Library)**
+Used for loading and processing images before embedding generation.
+
+## Models Used
+
+### Text Embeddings
+- **all-MiniLM-L6-v2**: Lightweight sentence transformer for semantic search (384 dimensions)
+- **ms-marco-TinyBERT-L2-v2**: Cross-encoder model for passage reranking
+
+### Multimodal Embeddings
+- **clip-ViT-B-32**: Vision Transformer model for creating unified image-text embeddings (512 dimensions)
+
+### Large Language Models
+- **Llama 3.3 70B** (via Groq): Query enhancement, spell correction, and rewriting
+- **Llama 4 Scout 17B** (via Groq): Image understanding and multimodal query generation
+- **Gemini 2.0 Flash**: Advanced vision-language model for image analysis
+
+## Current Implementation
+
+Currently, this program is designed to work with a **movie dataset**. The system loads movie documents with title and description fields to build indexes and embeddings for comprehensive movie search and discovery.
+
+Similar approaches can be applied for other domains and datasets, including:
+
+- **Product Catalogs**: E-commerce platforms with product names, descriptions, images, and specifications
+- **Academic Papers**: Research databases with titles, abstracts, and full-text papers
+- **News Articles**: News aggregators with headlines, content, and embedded images
+- **Document Repositories**: Enterprise knowledge bases with technical documentation and manuals
+- **Image Galleries**: Photo collections with captions, metadata, and visual content
+- **Restaurant/Hotel Reviews**: Hospitality platforms with descriptions, amenities, and photos
+- **Real Estate Listings**: Property databases with descriptions, images, and location data
+- **Video Transcripts**: Video platforms with metadata and searchable transcripts
+- **Job Listings**: Career platforms with job descriptions, requirements, and company information
+- **Medical Records**: Healthcare systems with patient histories, diagnoses, and clinical notes
+
+The modular architecture allows easy adaptation to any dataset by simply replacing the data loading component and adjusting field mappings.
 
 ## Performance Considerations
 
